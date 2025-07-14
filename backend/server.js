@@ -4,6 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -14,6 +15,7 @@ const userRoutes = require('./routes/users');
 const orderRoutes = require('./routes/orders');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
+const paymentRoutes = require('./routes/payments');
 
 // Import middleware
 const { apiLimiter, authLimiter, browseLimiter, paymentLimiter } = require('./middleware/rateLimiting');
@@ -24,6 +26,9 @@ const { connectDB, setupConnectionEvents, getConnectionStatus } = require('./uti
 
 // Security middleware
 app.use(helmet());
+
+// Serve static files for testing
+app.use('/test', express.static(path.join(__dirname, 'public')));
 
 // Apply rate limiting
 app.use('/api/', apiLimiter);
@@ -58,6 +63,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 connectDB();
 setupConnectionEvents();
 
+// Serve static files for payment testing
+app.use('/api/payments/test', express.static(path.join(__dirname, 'public', 'payment-testing')));
+
 // Health check route
 app.get('/api/health', (req, res) => {
   const dbStatus = getConnectionStatus();
@@ -77,6 +85,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // 404 handler for unknown routes
 app.use('*', notFound);

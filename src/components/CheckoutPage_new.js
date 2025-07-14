@@ -1,19 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { toast } from 'react-hot-toast';
-import QRCode from 'qrcode';
-import Confetti from 'react-confetti';
 
 const CheckoutPage = ({ onBackToCart, onOrderComplete }) => {
   const { cart, cartTotal, placeOrder, user } = useApp();
   const [isProcessing, setIsProcessing] = useState(false);
   const [testMode, setTestMode] = useState(true);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('credit_card');
-  const [qrCodeUrl, setQrCodeUrl] = useState('');
-  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
-  const [paymentStep, setPaymentStep] = useState('form'); // 'form', 'processing', 'success'
-  const [windowDimensions, setWindowDimensions] = useState({ width: 0, height: 0 });
-  const qrCanvasRef = useRef(null);
   const [formData, setFormData] = useState({
     // Shipping Information
     firstName: user?.name?.split(' ')[0] || '',
@@ -45,54 +38,6 @@ const CheckoutPage = ({ onBackToCart, onOrderComplete }) => {
   });
 
   const [errors, setErrors] = useState({});
-
-  // Get window dimensions for confetti
-  useEffect(() => {
-    const updateWindowDimensions = () => {
-      setWindowDimensions({ width: window.innerWidth, height: window.innerHeight });
-    };
-
-    updateWindowDimensions();
-    window.addEventListener('resize', updateWindowDimensions);
-
-    return () => window.removeEventListener('resize', updateWindowDimensions);
-  }, []);
-
-  // Generate QR code when QR payment method is selected
-  useEffect(() => {
-    if (selectedPaymentMethod === 'qr_code' && testMode) {
-      generateQRCode();
-    }
-  }, [selectedPaymentMethod, testMode]);
-
-  const generateQRCode = async () => {
-    try {
-      const paymentData = {
-        amount: total.toFixed(2),
-        currency: 'USD',
-        merchantId: 'TEST_MERCHANT_123',
-        orderId: `ORDER_${Date.now()}`,
-        description: 'E-commerce Purchase',
-        testMode: true
-      };
-
-      const qrData = `upi://pay?pa=test@upi&pn=Test Merchant&am=${paymentData.amount}&cu=${paymentData.currency}&tn=${paymentData.description}&mc=1234&tr=${paymentData.orderId}`;
-      
-      const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
-        width: 200,
-        margin: 2,
-        color: {
-          dark: '#000000',
-          light: '#ffffff'
-        }
-      });
-      
-      setQrCodeUrl(qrCodeDataUrl);
-    } catch (error) {
-      console.error('Error generating QR code:', error);
-      toast.error('Failed to generate QR code');
-    }
-  };
 
   // Payment Methods
   const paymentMethods = [
@@ -197,7 +142,7 @@ const CheckoutPage = ({ onBackToCart, onOrderComplete }) => {
     }
   };
 
-  const fillTestCard = (cardType) => {
+  const useTestCard = (cardType) => {
     const cardData = {
       visa: { cardNumber: '4242 4242 4242 4242', expiryDate: '12/25', cvv: '123', nameOnCard: 'Test User' },
       mastercard: { cardNumber: '5555 5555 5555 4444', expiryDate: '12/25', cvv: '123', nameOnCard: 'Test User' },
@@ -293,14 +238,10 @@ const CheckoutPage = ({ onBackToCart, onOrderComplete }) => {
     }
 
     setIsProcessing(true);
-    setPaymentStep('processing');
 
     try {
-      // Show different processing times based on payment method
-      const processingTime = getProcessingTime(selectedPaymentMethod);
-      
-      // Simulate real payment processing with method-specific behavior
-      await simulatePaymentProcessing(processingTime);
+      // Simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       const orderData = {
         items: cart,
@@ -324,71 +265,19 @@ const CheckoutPage = ({ onBackToCart, onOrderComplete }) => {
       const result = await placeOrder(orderData);
       
       if (result.success) {
-        setPaymentStep('success');
-        setShowSuccessAnimation(true);
-        toast.success('Payment successful! 🎉');
-        
-        // Hide confetti after 5 seconds
-        setTimeout(() => {
-          setShowSuccessAnimation(false);
-          if (onOrderComplete) {
-            onOrderComplete(result.order);
-          }
-        }, 5000);
+        toast.success('Order placed successfully!');
+        if (onOrderComplete) {
+          onOrderComplete(result.order);
+        }
       } else {
-        throw new Error(result.message || 'Payment failed');
+        throw new Error(result.message || 'Order failed');
       }
     } catch (error) {
-      console.error('Payment processing error:', error);
-      toast.error(error.message || 'Payment failed. Please try again.');
-      setPaymentStep('form');
+      console.error('Order submission error:', error);
+      toast.error(error.message || 'Failed to place order. Please try again.');
     } finally {
       setIsProcessing(false);
     }
-  };
-
-  const getProcessingTime = (method) => {
-    const times = {
-      'credit_card': 3000,
-      'debit_card': 3000,
-      'upi': 2000,
-      'qr_code': 1500,
-      'paytm': 2500,
-      'phonepe': 2500,
-      'gpay': 2000,
-      'amazon_pay': 3000,
-      'net_banking': 4000,
-      'mobikwik': 2500
-    };
-    return times[method] || 3000;
-  };
-
-  const simulatePaymentProcessing = async (duration) => {
-    return new Promise((resolve) => {
-      // Show processing steps
-      const steps = [
-        'Validating payment details...',
-        'Connecting to payment gateway...',
-        'Processing payment...',
-        'Confirming transaction...'
-      ];
-
-      let currentStep = 0;
-      const stepInterval = duration / steps.length;
-
-      const showStep = () => {
-        if (currentStep < steps.length) {
-          toast.loading(steps[currentStep], { id: 'payment-progress' });
-          currentStep++;
-          setTimeout(showStep, stepInterval);
-        } else {
-          toast.dismiss('payment-progress');
-          resolve();
-        }
-      };
-
-      showStep();
-    });
   };
 
   const getPaymentData = () => {
@@ -423,22 +312,6 @@ const CheckoutPage = ({ onBackToCart, onOrderComplete }) => {
       default:
         return {};
     }
-  };
-
-  const getPaymentMethodName = (method) => {
-    const names = {
-      'credit_card': 'Credit Card',
-      'debit_card': 'Debit Card',
-      'upi': 'UPI',
-      'qr_code': 'QR Code',
-      'paytm': 'Paytm',
-      'phonepe': 'PhonePe',
-      'gpay': 'Google Pay',
-      'amazon_pay': 'Amazon Pay',
-      'net_banking': 'Net Banking',
-      'mobikwik': 'MobiKwik'
-    };
-    return names[method] || method;
   };
 
   const renderPaymentForm = () => {
@@ -553,62 +426,20 @@ const CheckoutPage = ({ onBackToCart, onOrderComplete }) => {
                 🧪 <strong>Test Mode:</strong> Use "test@upi" for successful payment simulation
               </p>
             </div>
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={generateQRCode}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <span className="mr-2">📱</span>
-                Generate QR Code
-              </button>
-              {qrCodeUrl && (
-                <div className="mt-4 p-4 bg-white border rounded-lg inline-block">
-                  <img src={qrCodeUrl} alt="UPI QR Code" className="mx-auto mb-2" style={{ width: '150px', height: '150px' }} />
-                  <p className="text-xs text-gray-600">Scan with any UPI app</p>
-                </div>
-              )}
-            </div>
           </div>
         );
 
       case 'qr_code':
         return (
           <div className="text-center space-y-4">
-            <div className="inline-block p-6 bg-white border-2 border-gray-200 rounded-lg shadow-lg">
-              {qrCodeUrl ? (
-                <div className="space-y-4">
-                  <img 
-                    src={qrCodeUrl} 
-                    alt="Payment QR Code" 
-                    className="mx-auto"
-                    style={{ width: '200px', height: '200px' }}
-                  />
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-gray-900">Scan QR Code to Pay</p>
-                    <p className="text-lg font-bold text-blue-600">${total.toFixed(2)}</p>
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                      <span className="text-xs text-green-600 font-medium">Ready to scan</span>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center space-y-3">
-                  <div className="w-8 h-8 border-t-2 border-b-2 border-blue-500 rounded-full animate-spin"></div>
-                  <p className="text-sm text-gray-600">Generating QR Code...</p>
-                </div>
-              )}
+            <div className="inline-block p-8 bg-gray-100 rounded-lg">
+              <div className="text-6xl">📱</div>
+              <p className="text-sm text-gray-600 mt-2">QR Code will appear here</p>
             </div>
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-800">
-                🧪 <strong>Test Mode:</strong> QR code payment will be simulated automatically after submission
+                🧪 <strong>Test Mode:</strong> QR code payment will be simulated automatically
               </p>
-            </div>
-            <div className="text-xs text-gray-500 space-y-1">
-              <p>• Open your UPI app (GPay, PhonePe, Paytm)</p>
-              <p>• Scan the QR code above</p>
-              <p>• Confirm payment in your app</p>
             </div>
           </div>
         );
@@ -638,17 +469,6 @@ const CheckoutPage = ({ onBackToCart, onOrderComplete }) => {
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-800">
                 🧪 <strong>Test Mode:</strong> Use any test phone number for simulation
-              </p>
-            </div>
-            <div className="text-center space-y-3">
-              <div className="inline-flex items-center space-x-2 px-4 py-2 bg-green-50 border border-green-200 rounded-lg">
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium text-green-700">
-                  {getPaymentMethodName(selectedPaymentMethod)} wallet ready
-                </span>
-              </div>
-              <p className="text-xs text-gray-600">
-                You'll be redirected to {getPaymentMethodName(selectedPaymentMethod)} to complete payment
               </p>
             </div>
           </div>
@@ -720,52 +540,7 @@ const CheckoutPage = ({ onBackToCart, onOrderComplete }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 relative">
-      {/* Success Animation Overlay */}
-      {showSuccessAnimation && (
-        <>
-          <Confetti
-            width={windowDimensions.width}
-            height={windowDimensions.height}
-            recycle={false}
-            numberOfPieces={500}
-            gravity={0.3}
-          />
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-8 text-center max-w-md mx-4 shadow-2xl">
-              <div className="text-6xl mb-4">🎉</div>
-              <h2 className="text-2xl font-bold text-green-600 mb-2">Payment Successful!</h2>
-              <p className="text-gray-600 mb-4">Your order has been placed successfully</p>
-              <div className="text-lg font-semibold text-gray-900">Order Total: ${total.toFixed(2)}</div>
-              <div className="mt-4">
-                <div className="inline-flex items-center px-4 py-2 bg-green-100 rounded-full">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
-                  <span className="text-sm font-medium text-green-800">Processing...</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Payment Processing Overlay */}
-      {paymentStep === 'processing' && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40">
-          <div className="bg-white rounded-lg p-8 text-center max-w-md mx-4 shadow-2xl">
-            <div className="space-y-4">
-              <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-              <h3 className="text-xl font-semibold text-gray-900">Processing Payment</h3>
-              <p className="text-gray-600">Please wait while we process your {getPaymentMethodName(selectedPaymentMethod)} payment...</p>
-              <div className="flex items-center justify-center space-x-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
+    <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="lg:grid lg:grid-cols-12 lg:gap-x-12 lg:items-start xl:gap-x-16">
           <div className="lg:col-span-7">
@@ -952,7 +727,7 @@ const CheckoutPage = ({ onBackToCart, onOrderComplete }) => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <button
                         type="button"
-                        onClick={() => fillTestCard('visa')}
+                        onClick={() => useTestCard('visa')}
                         className="text-left p-2 text-xs bg-white border border-green-300 rounded hover:bg-green-50 transition-colors"
                       >
                         <div className="font-medium">Visa (Success)</div>
@@ -960,7 +735,7 @@ const CheckoutPage = ({ onBackToCart, onOrderComplete }) => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => fillTestCard('mastercard')}
+                        onClick={() => useTestCard('mastercard')}
                         className="text-left p-2 text-xs bg-white border border-green-300 rounded hover:bg-green-50 transition-colors"
                       >
                         <div className="font-medium">Mastercard (Success)</div>
@@ -968,7 +743,7 @@ const CheckoutPage = ({ onBackToCart, onOrderComplete }) => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => fillTestCard('amex')}
+                        onClick={() => useTestCard('amex')}
                         className="text-left p-2 text-xs bg-white border border-green-300 rounded hover:bg-green-50 transition-colors"
                       >
                         <div className="font-medium">American Express</div>
@@ -976,7 +751,7 @@ const CheckoutPage = ({ onBackToCart, onOrderComplete }) => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => fillTestCard('declined')}
+                        onClick={() => useTestCard('declined')}
                         className="text-left p-2 text-xs bg-white border border-red-300 rounded hover:bg-red-50 transition-colors"
                       >
                         <div className="font-medium text-red-600">Declined Card</div>
@@ -1035,37 +810,16 @@ const CheckoutPage = ({ onBackToCart, onOrderComplete }) => {
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isProcessing || paymentStep !== 'form'}
-                className="w-full py-3 px-6 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
+                disabled={isProcessing}
+                className="w-full py-3 px-6 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {paymentStep === 'processing' ? (
+                {isProcessing ? (
                   <div className="flex items-center justify-center">
                     <div className="w-5 h-5 border-t-2 border-b-2 border-white rounded-full animate-spin mr-2"></div>
-                    Processing {getPaymentMethodName(selectedPaymentMethod)}...
-                  </div>
-                ) : paymentStep === 'success' ? (
-                  <div className="flex items-center justify-center">
-                    <span className="mr-2">✅</span>
-                    Payment Successful!
+                    Processing Order...
                   </div>
                 ) : (
-                  <>
-                    {selectedPaymentMethod === 'qr_code' ? 
-                      `Scan QR & Pay - $${total.toFixed(2)}` :
-                      selectedPaymentMethod === 'upi' ?
-                      `Pay with UPI - $${total.toFixed(2)}` :
-                      ['paytm', 'phonepe', 'gpay', 'mobikwik', 'amazon_pay'].includes(selectedPaymentMethod) ?
-                      `Pay with ${getPaymentMethodName(selectedPaymentMethod)} - $${total.toFixed(2)}` :
-                      selectedPaymentMethod === 'net_banking' ?
-                      `Pay with Net Banking - $${total.toFixed(2)}` :
-                      `Complete Payment - $${total.toFixed(2)}`
-                    }
-                  </>
-                )}
-                
-                {/* Animated background for processing */}
-                {paymentStep === 'processing' && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 animate-pulse"></div>
+                  `Complete Order - $${total.toFixed(2)}`
                 )}
               </button>
             </form>

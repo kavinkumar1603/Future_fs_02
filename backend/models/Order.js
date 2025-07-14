@@ -77,7 +77,7 @@ const orderSchema = new mongoose.Schema({
     type: {
       type: String,
       required: true,
-      enum: ['Credit Card', 'Debit Card', 'PayPal', 'Apple Pay', 'Google Pay', 'Bank Transfer', 'Cash on Delivery'],
+      enum: ['Credit Card', 'Debit Card', 'PayPal', 'Apple Pay', 'Google Pay', 'Bank Transfer', 'Cash on Delivery', 'UPI', 'QR Code Payment', 'Paytm', 'PhonePe', 'Google Pay UPI', 'Amazon Pay'],
       default: 'Credit Card'
     },
     cardNumber: String, // Encrypted or tokenized
@@ -86,9 +86,12 @@ const orderSchema = new mongoose.Schema({
     cardHolderName: String,
     provider: {
       type: String,
-      enum: ['Visa', 'Mastercard', 'American Express', 'Discover', 'PayPal', 'Apple', 'Google', 'Bank', 'COD']
+      enum: ['Visa', 'Mastercard', 'American Express', 'Discover', 'PayPal', 'Apple', 'Google', 'Bank', 'COD', 'UPI', 'QR Payment', 'Paytm', 'PhonePe', 'Amazon Pay']
     },
     transactionId: String,
+    upiId: String, // For UPI payments
+    qrId: String, // For QR code payments
+    phoneNumber: String, // For wallet payments
     testMode: {
       type: Boolean,
       default: true // Default to test mode for development
@@ -99,6 +102,17 @@ const orderSchema = new mongoose.Schema({
         type: String,
         enum: ['success', 'decline', 'insufficient_funds', 'expired_card', 'invalid_cvc']
       }
+    },
+    animationType: {
+      type: String,
+      enum: ['card_success', 'upi_success', 'qr_scan_success', 'paytm_success', 'phonepe_success', 'gpay_success', 'amazon_success', 'paypal_success']
+    },
+    processingTime: Number, // Animation duration in milliseconds
+    additionalData: {
+      cashbackEarned: Number,
+      walletBalance: String,
+      rewards: String,
+      upiHandle: String
     }
   },
   subtotal: {
