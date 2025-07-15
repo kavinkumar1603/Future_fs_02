@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AppProvider } from './context/AppContext';
 import { Toaster } from 'react-hot-toast';
 import Header from './components/Header';
+import HomePage from './components/HomePage';
 import ProductsPage from './components/ProductsPage';
 import CartPage from './components/CartPage';
 import CheckoutPage from './components/CheckoutPage';
@@ -9,9 +10,10 @@ import OrdersPage from './components/OrdersPage';
 import './App.css';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('products');
+  const [currentPage, setCurrentPage] = useState('home');
   const [searchTerm, setSearchTerm] = useState('');
   const [completedOrder, setCompletedOrder] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState('all');
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -24,6 +26,10 @@ function App() {
     }
   };
 
+  const handleCategorySelect = (category) => {
+    setSelectedCategory(category);
+  };
+
   const handleOrderComplete = (order) => {
     setCompletedOrder(order);
     setCurrentPage('orderConfirmation');
@@ -31,6 +37,13 @@ function App() {
 
   const renderCurrentPage = () => {
     switch (currentPage) {
+      case 'home':
+        return (
+          <HomePage
+            onCategorySelect={handleCategorySelect}
+            onPageChange={handlePageChange}
+          />
+        );
       case 'cart':
         return (
           <CartPage
@@ -52,10 +65,26 @@ function App() {
           />
         );
       case 'orderConfirmation':
-        return <OrderConfirmation order={completedOrder} onContinueShopping={() => handlePageChange('products')} />;
+        return (
+          <OrdersPage
+            onBackToProducts={() => handlePageChange('products')}
+            orderToShow={completedOrder}
+          />
+        );
       case 'products':
+        return (
+          <ProductsPage
+            searchTerm={searchTerm}
+            selectedCategory={selectedCategory}
+          />
+        );
       default:
-        return <ProductsPage searchTerm={searchTerm} />;
+        return (
+          <HomePage
+            onCategorySelect={handleCategorySelect}
+            onPageChange={handlePageChange}
+          />
+        );
     }
   };
 
@@ -67,6 +96,7 @@ function App() {
           onSearchChange={handleSearchChange}
           onCartClick={() => handlePageChange('cart')}
           onOrdersClick={() => handlePageChange('orders')}
+          onHomeClick={() => handlePageChange('home')}
         />
         <main>
           {renderCurrentPage()}

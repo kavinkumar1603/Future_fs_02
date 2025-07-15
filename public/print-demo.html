@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Receipt Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            body { 
+                margin: 0; 
+                padding: 15px; 
+                font-size: 12px;
+            }
+            .no-print { 
+                display: none !important; 
+            }
+            .print-area {
+                box-shadow: none !important;
+                border: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Order Receipt Print Demo</h1>
+        
+        <div class="bg-white rounded-lg shadow-lg p-8 print-area">
+            <!-- Receipt Header -->
+            <div class="text-center border-b-2 border-gray-300 pb-6 mb-8">
+                <h1 class="text-3xl font-bold text-blue-600 mb-2">E-Commerce Store</h1>
+                <p class="text-xl text-gray-600">Order Receipt</p>
+            </div>
+
+            <!-- Test Mode Banner -->
+            <div class="bg-yellow-100 border-2 border-yellow-400 p-3 rounded-lg text-center font-bold text-yellow-800 mb-6">
+                🧪 TEST MODE - This is a test transaction
+            </div>
+
+            <!-- Order Information -->
+            <div class="mb-8 p-4 border border-gray-200 rounded-lg">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">Order Information</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <p class="mb-2"><span class="font-semibold text-gray-600">Order ID:</span> ORD_1234567890</p>
+                        <p class="mb-2"><span class="font-semibold text-gray-600">Transaction ID:</span> TXN_9876543210</p>
+                        <p class="mb-2"><span class="font-semibold text-gray-600">Order Date:</span> July 14, 2025, 2:30:45 PM</p>
+                    </div>
+                    <div>
+                        <p class="mb-2"><span class="font-semibold text-gray-600">Payment Method:</span> Credit Card</p>
+                        <p class="mb-2">
+                            <span class="font-semibold text-gray-600">Payment Status:</span> 
+                            <span class="inline-block ml-2 px-3 py-1 bg-green-100 text-green-800 text-xs font-bold rounded-full">
+                                COMPLETED
+                            </span>
+                        </p>
+                        <p class="mb-2"><span class="font-semibold text-gray-600">Order Status:</span> Confirmed</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shipping Address -->
+            <div class="mb-8 p-4 border border-gray-200 rounded-lg">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">Shipping Address</h3>
+                <div class="text-gray-700">
+                    <p class="font-semibold">John Doe</p>
+                    <p>123 Main Street, Apt 4B</p>
+                    <p>New York, NY 10001</p>
+                    <p>United States</p>
+                    <p class="mt-2"><span class="font-semibold">Email:</span> john.doe@example.com</p>
+                    <p><span class="font-semibold">Phone:</span> +1 (555) 123-4567</p>
+                </div>
+            </div>
+
+            <!-- Order Items -->
+            <div class="mb-8 p-4 border border-gray-200 rounded-lg">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">Order Items</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="border border-gray-300 px-4 py-2 text-left">Item</th>
+                                <th class="border border-gray-300 px-4 py-2 text-right">Price</th>
+                                <th class="border border-gray-300 px-4 py-2 text-center">Qty</th>
+                                <th class="border border-gray-300 px-4 py-2 text-right">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="bg-gray-50">
+                                <td class="border border-gray-300 px-4 py-2">Wireless Headphones</td>
+                                <td class="border border-gray-300 px-4 py-2 text-right">$99.99</td>
+                                <td class="border border-gray-300 px-4 py-2 text-center">2</td>
+                                <td class="border border-gray-300 px-4 py-2 text-right">$199.98</td>
+                            </tr>
+                            <tr class="bg-white">
+                                <td class="border border-gray-300 px-4 py-2">Smartphone Case</td>
+                                <td class="border border-gray-300 px-4 py-2 text-right">$24.99</td>
+                                <td class="border border-gray-300 px-4 py-2 text-center">1</td>
+                                <td class="border border-gray-300 px-4 py-2 text-right">$24.99</td>
+                            </tr>
+                            <tr class="bg-gray-50">
+                                <td class="border border-gray-300 px-4 py-2">USB Cable</td>
+                                <td class="border border-gray-300 px-4 py-2 text-right">$12.99</td>
+                                <td class="border border-gray-300 px-4 py-2 text-center">3</td>
+                                <td class="border border-gray-300 px-4 py-2 text-right">$38.97</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="mb-8 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b border-blue-300 pb-2">Order Summary</h3>
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span>Subtotal:</span>
+                        <span>$263.94</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Shipping:</span>
+                        <span>Free</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Tax:</span>
+                        <span>$21.12</span>
+                    </div>
+                    <div class="flex justify-between text-lg font-bold text-green-600 border-t-2 border-gray-300 pt-2">
+                        <span>Total Paid:</span>
+                        <span>$285.06</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="text-center text-gray-600 text-sm border-t border-gray-200 pt-6">
+                <p class="mb-2">Thank you for your business!</p>
+                <p class="mb-2">Questions? Contact us at support@ecommerce-store.com</p>
+                <p>Generated on July 14, 2025, 2:31:00 PM</p>
+            </div>
+        </div>
+
+        <!-- Print Controls -->
+        <div class="mt-8 flex justify-center space-x-4 no-print">
+            <button 
+                onclick="window.print()" 
+                class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-colors duration-200 flex items-center"
+            >
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                </svg>
+                Print Receipt
+            </button>
+            
+            <button 
+                onclick="generatePDF()" 
+                class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-colors duration-200 flex items-center"
+            >
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Download PDF
+            </button>
+            
+            <button 
+                onclick="emailReceipt()" 
+                class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-colors duration-200 flex items-center"
+            >
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                </svg>
+                Email Receipt
+            </button>
+        </div>
+
+        <!-- Instructions -->
+        <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6 no-print">
+            <h3 class="text-lg font-semibold text-blue-800 mb-4">📋 How to Use</h3>
+            <div class="space-y-2 text-blue-700">
+                <p><strong>🖨️ Print Receipt:</strong> Opens browser print dialog with optimized layout</p>
+                <p><strong>📄 Download PDF:</strong> Generates downloadable PDF version (demo functionality)</p>
+                <p><strong>📧 Email Receipt:</strong> Opens email client with receipt content (demo functionality)</p>
+            </div>
+            <div class="mt-4 p-3 bg-yellow-100 border border-yellow-300 rounded text-yellow-800">
+                <p><strong>💡 Tip:</strong> When printing, the layout automatically adjusts for best print quality. Headers, buttons, and decorative elements are hidden.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function generatePDF() {
+            alert('📄 PDF generation would be implemented here.\n\nThis would typically:\n• Convert the receipt to PDF format\n• Download it automatically\n• Save it with order ID as filename');
+        }
+
+        function emailReceipt() {
+            const subject = 'Your Order Receipt - ORD_1234567890';
+            const body = 'Thank you for your order! Please find your receipt attached.\n\nOrder ID: ORD_1234567890\nTotal: $285.06\nDate: July 14, 2025\n\nBest regards,\nE-Commerce Store Team';
+            
+            const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            window.location.href = mailtoLink;
+        }
+
+        // Print optimization
+        window.addEventListener('beforeprint', function() {
+            document.title = 'Receipt_ORD_1234567890';
+        });
+
+        // Add print styles dynamically
+        const printStyles = `
+            @media print {
+                * {
+                    -webkit-print-color-adjust: exact !important;
+                    color-adjust: exact !important;
+                }
+                .print-area {
+                    max-width: none !important;
+                    margin: 0 !important;
+                    padding: 10mm !important;
+                }
+                h1, h2, h3 {
+                    page-break-after: avoid;
+                }
+                table {
+                    page-break-inside: avoid;
+                }
+                tr {
+                    page-break-inside: avoid;
+                }
+            }
+        `;
+
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = printStyles;
+        document.head.appendChild(styleSheet);
+    </script>
+</body>
+</html>

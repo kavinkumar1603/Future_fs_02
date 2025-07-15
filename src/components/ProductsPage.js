@@ -1,14 +1,21 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { products, categories } from '../data/products';
 import { StarIcon, ShoppingCartIcon } from '@heroicons/react/24/solid';
 import { ShoppingCartIcon as ShoppingCartOutline } from '@heroicons/react/24/outline';
 
-const ProductsPage = ({ searchTerm }) => {
+const ProductsPage = ({ searchTerm, selectedCategory: initialCategory }) => {
   const { addToCart } = useApp();
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory || 'all');
   const [sortBy, setSortBy] = useState('name');
   const [priceRange, setPriceRange] = useState([0, 200]);
+
+  // Update category when prop changes
+  useEffect(() => {
+    if (initialCategory) {
+      setSelectedCategory(initialCategory);
+    }
+  }, [initialCategory]);
 
   // Filter and sort products
   const filteredProducts = useMemo(() => {

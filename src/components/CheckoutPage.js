@@ -13,6 +13,8 @@ const CheckoutPage = ({ onBackToCart, onOrderComplete }) => {
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [paymentStep, setPaymentStep] = useState('form'); // 'form', 'processing', 'success'
   const [windowDimensions, setWindowDimensions] = useState({ width: 0, height: 0 });
+  const [completedOrder, setCompletedOrder] = useState(null);
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
   const qrCanvasRef = useRef(null);
   const [formData, setFormData] = useState({
     // Shipping Information
@@ -326,6 +328,7 @@ const CheckoutPage = ({ onBackToCart, onOrderComplete }) => {
       if (result.success) {
         setPaymentStep('success');
         setShowSuccessAnimation(true);
+        setCompletedOrder(result.order);
         toast.success('Payment successful! 🎉');
         
         // Hide confetti after 5 seconds
@@ -439,6 +442,262 @@ const CheckoutPage = ({ onBackToCart, onOrderComplete }) => {
       'mobikwik': 'MobiKwik'
     };
     return names[method] || method;
+  };
+
+  const printOrderSummary = () => {
+    if (!completedOrder) return;
+
+    const printWindow = window.open('', '_blank');
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Order Summary - ${completedOrder.id}</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            line-height: 1.6;
+            color: #333;
+          }
+          .header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+          }
+          .company-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2563eb;
+            margin-bottom: 5px;
+          }
+          .receipt-title {
+            font-size: 20px;
+            color: #666;
+          }
+          .section {
+            margin-bottom: 25px;
+            padding: 15px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+          }
+          .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #374151;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 5px;
+          }
+          .order-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+          }
+          .info-item {
+            margin-bottom: 8px;
+          }
+          .label {
+            font-weight: bold;
+            color: #6b7280;
+          }
+          .value {
+            color: #111827;
+          }
+          .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+          }
+          .items-table th,
+          .items-table td {
+            border: 1px solid #e5e7eb;
+            padding: 12px;
+            text-align: left;
+          }
+          .items-table th {
+            background-color: #f9fafb;
+            font-weight: bold;
+            color: #374151;
+          }
+          .items-table tr:nth-child(even) {
+            background-color: #f9fafb;
+          }
+          .total-section {
+            background-color: #f0f9ff;
+            border: 2px solid #3b82f6;
+          }
+          .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 5px 0;
+          }
+          .total-label {
+            font-weight: bold;
+          }
+          .grand-total {
+            font-size: 18px;
+            font-weight: bold;
+            color: #059669;
+            border-top: 2px solid #d1d5db;
+            padding-top: 8px;
+          }
+          .payment-status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 12px;
+          }
+          .status-completed {
+            background-color: #dcfce7;
+            color: #166534;
+          }
+          .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 14px;
+            color: #6b7280;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 20px;
+          }
+          .test-mode {
+            background-color: #fef3c7;
+            border: 2px solid #f59e0b;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            color: #92400e;
+            margin-bottom: 20px;
+          }
+          @media print {
+            body { margin: 0; padding: 15px; }
+            .no-print { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="company-name">E-Commerce Store</div>
+          <div class="receipt-title">Order Receipt</div>
+        </div>
+
+        ${completedOrder.testMode ? '<div class="test-mode">🧪 TEST MODE - This is a test transaction</div>' : ''}
+
+        <div class="section">
+          <div class="section-title">Order Information</div>
+          <div class="order-info">
+            <div>
+              <div class="info-item">
+                <span class="label">Order ID:</span>
+                <span class="value">${completedOrder.id}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Transaction ID:</span>
+                <span class="value">${completedOrder.transactionId || 'N/A'}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Order Date:</span>
+                <span class="value">${new Date(completedOrder.date).toLocaleString()}</span>
+              </div>
+            </div>
+            <div>
+              <div class="info-item">
+                <span class="label">Payment Method:</span>
+                <span class="value">${getPaymentMethodName(completedOrder.paymentMethod)}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Payment Status:</span>
+                <span class="payment-status status-completed">${completedOrder.paymentStatus || 'Completed'}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Order Status:</span>
+                <span class="value">${completedOrder.status}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Shipping Address</div>
+          <div>
+            <strong>${completedOrder.shippingAddress.firstName} ${completedOrder.shippingAddress.lastName}</strong><br>
+            ${completedOrder.shippingAddress.address}<br>
+            ${completedOrder.shippingAddress.city}, ${completedOrder.shippingAddress.state} ${completedOrder.shippingAddress.zipCode}<br>
+            ${completedOrder.shippingAddress.country}<br>
+            <br>
+            <strong>Email:</strong> ${completedOrder.shippingAddress.email}<br>
+            <strong>Phone:</strong> ${completedOrder.shippingAddress.phone}
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Order Items</div>
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${completedOrder.items.map(item => `
+                <tr>
+                  <td>${item.name}</td>
+                  <td>$${item.price.toFixed(2)}</td>
+                  <td>${item.quantity}</td>
+                  <td>$${(item.price * item.quantity).toFixed(2)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="section total-section">
+          <div class="section-title">Order Summary</div>
+          <div class="total-row">
+            <span>Subtotal:</span>
+            <span>$${cartTotal.toFixed(2)}</span>
+          </div>
+          <div class="total-row">
+            <span>Shipping:</span>
+            <span>${shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span>
+          </div>
+          <div class="total-row">
+            <span>Tax:</span>
+            <span>$${tax.toFixed(2)}</span>
+          </div>
+          <div class="total-row grand-total">
+            <span>Total Paid:</span>
+            <span>$${completedOrder.total.toFixed(2)}</span>
+          </div>
+        </div>
+
+        <div class="footer">
+          <p>Thank you for your business!</p>
+          <p>Questions? Contact us at support@ecommerce-store.com</p>
+          <p>Printed on ${new Date().toLocaleString()}</p>
+        </div>
+
+        <script>
+          window.onload = function() {
+            window.print();
+          }
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
   };
 
   const renderPaymentForm = () => {
@@ -736,12 +995,47 @@ const CheckoutPage = ({ onBackToCart, onOrderComplete }) => {
               <div className="text-6xl mb-4">🎉</div>
               <h2 className="text-2xl font-bold text-green-600 mb-2">Payment Successful!</h2>
               <p className="text-gray-600 mb-4">Your order has been placed successfully</p>
-              <div className="text-lg font-semibold text-gray-900">Order Total: ${total.toFixed(2)}</div>
-              <div className="mt-4">
+              <div className="text-lg font-semibold text-gray-900 mb-4">Order Total: ${total.toFixed(2)}</div>
+              {completedOrder && (
+                <div className="text-sm text-gray-600 mb-4">
+                  <p><strong>Order ID:</strong> {completedOrder.id}</p>
+                  {completedOrder.transactionId && (
+                    <p><strong>Transaction ID:</strong> {completedOrder.transactionId}</p>
+                  )}
+                </div>
+              )}
+              <div className="mb-6">
                 <div className="inline-flex items-center px-4 py-2 bg-green-100 rounded-full">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
                   <span className="text-sm font-medium text-green-800">Processing...</span>
                 </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={() => setShowPrintPreview(true)}
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <span className="mr-2">👁️</span>
+                  View Receipt
+                </button>
+                <button
+                  onClick={printOrderSummary}
+                  className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  <span className="mr-2">🖨️</span>
+                  Print Receipt
+                </button>
+                <button
+                  onClick={() => {
+                    setShowSuccessAnimation(false);
+                    if (onOrderComplete && completedOrder) {
+                      onOrderComplete(completedOrder);
+                    }
+                  }}
+                  className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Continue Shopping
+                </button>
               </div>
             </div>
           </div>
@@ -1121,6 +1415,150 @@ const CheckoutPage = ({ onBackToCart, onOrderComplete }) => {
           </div>
         </div>
       </div>
+
+      {/* Print Preview Modal */}
+      {showPrintPreview && completedOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Order Receipt Preview</h3>
+              <button
+                onClick={() => setShowPrintPreview(false)}
+                className="text-gray-400 hover:text-gray-600 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)] bg-gray-50">
+              <div className="bg-white p-8 rounded-lg shadow-sm max-w-2xl mx-auto">
+                {/* Receipt Header */}
+                <div className="text-center border-b-2 border-gray-300 pb-6 mb-8">
+                  <h1 className="text-3xl font-bold text-blue-600 mb-2">E-Commerce Store</h1>
+                  <p className="text-xl text-gray-600">Order Receipt</p>
+                </div>
+
+                {completedOrder.testMode && (
+                  <div className="bg-yellow-100 border-2 border-yellow-400 p-3 rounded-lg text-center font-bold text-yellow-800 mb-6">
+                    🧪 TEST MODE - This is a test transaction
+                  </div>
+                )}
+
+                {/* Order Information */}
+                <div className="mb-8 p-4 border border-gray-200 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">Order Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="mb-2"><span className="font-semibold text-gray-600">Order ID:</span> {completedOrder.id}</p>
+                      <p className="mb-2"><span className="font-semibold text-gray-600">Transaction ID:</span> {completedOrder.transactionId || 'N/A'}</p>
+                      <p className="mb-2"><span className="font-semibold text-gray-600">Order Date:</span> {new Date(completedOrder.date).toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="mb-2"><span className="font-semibold text-gray-600">Payment Method:</span> {getPaymentMethodName(completedOrder.paymentMethod)}</p>
+                      <p className="mb-2">
+                        <span className="font-semibold text-gray-600">Payment Status:</span> 
+                        <span className="inline-block ml-2 px-3 py-1 bg-green-100 text-green-800 text-xs font-bold rounded-full">
+                          {completedOrder.paymentStatus || 'COMPLETED'}
+                        </span>
+                      </p>
+                      <p className="mb-2"><span className="font-semibold text-gray-600">Order Status:</span> {completedOrder.status}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Shipping Address */}
+                <div className="mb-8 p-4 border border-gray-200 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">Shipping Address</h3>
+                  <div className="text-gray-700">
+                    <p className="font-semibold">{completedOrder.shippingAddress.firstName} {completedOrder.shippingAddress.lastName}</p>
+                    <p>{completedOrder.shippingAddress.address}</p>
+                    <p>{completedOrder.shippingAddress.city}, {completedOrder.shippingAddress.state} {completedOrder.shippingAddress.zipCode}</p>
+                    <p>{completedOrder.shippingAddress.country}</p>
+                    <p className="mt-2"><span className="font-semibold">Email:</span> {completedOrder.shippingAddress.email}</p>
+                    <p><span className="font-semibold">Phone:</span> {completedOrder.shippingAddress.phone}</p>
+                  </div>
+                </div>
+
+                {/* Order Items */}
+                <div className="mb-8 p-4 border border-gray-200 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">Order Items</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="bg-gray-100">
+                          <th className="border border-gray-300 px-4 py-2 text-left">Item</th>
+                          <th className="border border-gray-300 px-4 py-2 text-right">Price</th>
+                          <th className="border border-gray-300 px-4 py-2 text-center">Qty</th>
+                          <th className="border border-gray-300 px-4 py-2 text-right">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {completedOrder.items.map((item, index) => (
+                          <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                            <td className="border border-gray-300 px-4 py-2">{item.name}</td>
+                            <td className="border border-gray-300 px-4 py-2 text-right">${item.price.toFixed(2)}</td>
+                            <td className="border border-gray-300 px-4 py-2 text-center">{item.quantity}</td>
+                            <td className="border border-gray-300 px-4 py-2 text-right">${(item.price * item.quantity).toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Order Summary */}
+                <div className="mb-8 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-blue-300 pb-2">Order Summary</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span>Subtotal:</span>
+                      <span>${cartTotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Shipping:</span>
+                      <span>{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Tax:</span>
+                      <span>${tax.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-lg font-bold text-green-600 border-t-2 border-gray-300 pt-2">
+                      <span>Total Paid:</span>
+                      <span>${completedOrder.total.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="text-center text-gray-600 text-sm border-t border-gray-200 pt-6">
+                  <p className="mb-2">Thank you for your business!</p>
+                  <p className="mb-2">Questions? Contact us at support@ecommerce-store.com</p>
+                  <p>Generated on {new Date().toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-between items-center p-4 border-t border-gray-200 bg-gray-50">
+              <button
+                onClick={() => setShowPrintPreview(false)}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Close Preview
+              </button>
+              <button
+                onClick={() => {
+                  setShowPrintPreview(false);
+                  printOrderSummary();
+                }}
+                className="inline-flex items-center px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <span className="mr-2">🖨️</span>
+                Print Receipt
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

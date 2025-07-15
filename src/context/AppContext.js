@@ -102,20 +102,103 @@ export function AppProvider({ children }) {
     dispatch({ type: 'CLEAR_CART' });
   };
 
-  const placeOrder = (orderData) => {
-    const order = {
-      id: Date.now().toString(),
-      ...orderData,
-      items: [...state.cart],
-      total: state.cart.reduce((total, item) => total + (item.price * item.quantity), 0),
-      date: new Date().toISOString(),
-      status: 'confirmed'
-    };
-    
-    dispatch({ type: 'ADD_ORDER', payload: order });
-    dispatch({ type: 'CLEAR_CART' });
-    toast.success('Order placed successfully!');
-    return order;
+  const placeOrder = async (orderData) => {
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      
+      // Prepare payment data for backend
+      const paymentRequest = {
+        paymentMethod: orderData.paymentMethod,
+        amount: orderData.total,
+        testMode: orderData.testMode,
+        paymentData: orderData.paymentData,
+        orderDetails: {
+          items: orderData.items || state.cart,
+          shippingAddress: orderData.shippingAddress,
+          total: orderData.total
+        }
+      };
+
+      // Process payment through backend
+      const paymentResponse = await fetch('http://localhost:5000/api/payment/process', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paymentRequest)
+      });
+
+      if (!paymentResponse.ok) {
+        throw new Error('Payment processing failed');
+      }
+
+      // Handle SSE response for real-time updates
+      const reader = paymentResponse.body.getReader();
+      const decoder = new TextDecoder();
+      let paymentResult = null;
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              if (data.status === 'completed') {
+                paymentResult = data;
+                break;
+              } else if (data.status === 'error') {
+                throw new Error(data.message);
+              }
+              // For progress updates, you could emit events here if needed
+            } catch (e) {
+              console.error('Error parsing SSE data:', e);
+            }
+          }
+        }
+
+        if (paymentResult) break;
+      }
+
+      if (!paymentResult || !paymentResult.success) {
+        throw new Error(paymentResult?.message || 'Payment failed');
+      }
+
+      // Create order object on successful payment
+      const order = {
+        id: paymentResult.transactionId || Date.now().toString(),
+        ...orderData,
+        items: orderData.items || [...state.cart],
+        total: orderData.total,
+        date: new Date().toISOString(),
+        status: 'confirmed',
+        paymentStatus: 'completed',
+        transactionId: paymentResult.transactionId
+      };
+      
+      dispatch({ type: 'ADD_ORDER', payload: order });
+      dispatch({ type: 'CLEAR_CART' });
+      
+      return { 
+        success: true, 
+        order: order,
+        message: 'Order placed successfully!'
+      };
+
+    } catch (error) {
+      console.error('Order placement error:', error);
+      return {
+        success: false,
+        message: error.message || 'Order placement failed'
+      };
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
   };
 
   const cartTotal = state.cart.reduce((total, item) => total + (item.price * item.quantity), 0);

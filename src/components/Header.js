@@ -9,7 +9,7 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline';
 
-const Header = ({ searchTerm, onSearchChange, onCartClick, onOrdersClick }) => {
+const Header = ({ searchTerm, onSearchChange, onCartClick, onOrdersClick, onHomeClick }) => {
   const { user, logoutUser, cartItemsCount } = useApp();
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState('login');
@@ -33,10 +33,15 @@ const Header = ({ searchTerm, onSearchChange, onCartClick, onOrdersClick }) => {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Fit Pro
-              </h1>
-              <span className="ml-2 text-sm text-gray-500 hidden sm:block">Tech Store</span>
+              <button 
+                onClick={onHomeClick}
+                className="flex items-center hover:opacity-80 transition-opacity"
+              >
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  FitPro
+                </h1>
+                <span className="ml-2 text-sm text-gray-500 hidden sm:block">Store</span>
+              </button>
             </div>
 
             {/* Search Bar - Desktop */}

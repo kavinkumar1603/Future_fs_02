@@ -63,6 +63,282 @@ const OrdersPage = ({ onBackToProducts }) => {
     }
   };
 
+  const getPaymentMethodName = (method) => {
+    const names = {
+      'credit_card': 'Credit Card',
+      'debit_card': 'Debit Card',
+      'upi': 'UPI',
+      'qr_code': 'QR Code',
+      'paytm': 'Paytm',
+      'phonepe': 'PhonePe',
+      'gpay': 'Google Pay',
+      'amazon_pay': 'Amazon Pay',
+      'net_banking': 'Net Banking',
+      'mobikwik': 'MobiKwik'
+    };
+    return names[method] || method;
+  };
+
+  const printOrderSummary = (order) => {
+    if (!order) return;
+
+    const printWindow = window.open('', '_blank');
+    const cartTotal = order.items.reduce((total, item) => total + (item.price * item.quantity), 0);
+    const shipping = order.shipping || 0;
+    const tax = order.tax || (cartTotal * 0.08);
+    
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Order Receipt - ${order.id}</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            line-height: 1.6;
+            color: #333;
+          }
+          .header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+          }
+          .company-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2563eb;
+            margin-bottom: 5px;
+          }
+          .receipt-title {
+            font-size: 20px;
+            color: #666;
+          }
+          .section {
+            margin-bottom: 25px;
+            padding: 15px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+          }
+          .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #374151;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 5px;
+          }
+          .order-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+          }
+          .info-item {
+            margin-bottom: 8px;
+          }
+          .label {
+            font-weight: bold;
+            color: #6b7280;
+          }
+          .value {
+            color: #111827;
+          }
+          .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+          }
+          .items-table th,
+          .items-table td {
+            border: 1px solid #e5e7eb;
+            padding: 12px;
+            text-align: left;
+          }
+          .items-table th {
+            background-color: #f9fafb;
+            font-weight: bold;
+            color: #374151;
+          }
+          .items-table tr:nth-child(even) {
+            background-color: #f9fafb;
+          }
+          .total-section {
+            background-color: #f0f9ff;
+            border: 2px solid #3b82f6;
+          }
+          .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 5px 0;
+          }
+          .total-label {
+            font-weight: bold;
+          }
+          .grand-total {
+            font-size: 18px;
+            font-weight: bold;
+            color: #059669;
+            border-top: 2px solid #d1d5db;
+            padding-top: 8px;
+          }
+          .payment-status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 12px;
+          }
+          .status-completed {
+            background-color: #dcfce7;
+            color: #166534;
+          }
+          .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 14px;
+            color: #6b7280;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 20px;
+          }
+          .test-mode {
+            background-color: #fef3c7;
+            border: 2px solid #f59e0b;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            color: #92400e;
+            margin-bottom: 20px;
+          }
+          @media print {
+            body { margin: 0; padding: 15px; }
+            .no-print { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="company-name">E-Commerce Store</div>
+          <div class="receipt-title">Order Receipt</div>
+        </div>
+
+        ${order.testMode ? '<div class="test-mode">🧪 TEST MODE - This is a test transaction</div>' : ''}
+
+        <div class="section">
+          <div class="section-title">Order Information</div>
+          <div class="order-info">
+            <div>
+              <div class="info-item">
+                <span class="label">Order ID:</span>
+                <span class="value">${order.id}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Transaction ID:</span>
+                <span class="value">${order.transactionId || 'N/A'}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Order Date:</span>
+                <span class="value">${new Date(order.date).toLocaleString()}</span>
+              </div>
+            </div>
+            <div>
+              <div class="info-item">
+                <span class="label">Payment Method:</span>
+                <span class="value">${getPaymentMethodName(order.paymentMethod)}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Payment Status:</span>
+                <span class="payment-status status-completed">${order.paymentStatus || 'Completed'}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Order Status:</span>
+                <span class="value">${order.status}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Shipping Address</div>
+          <div>
+            <strong>${order.shippingAddress.firstName} ${order.shippingAddress.lastName}</strong><br>
+            ${order.shippingAddress.address}<br>
+            ${order.shippingAddress.city}, ${order.shippingAddress.state} ${order.shippingAddress.zipCode}<br>
+            ${order.shippingAddress.country}<br>
+            <br>
+            <strong>Email:</strong> ${order.shippingAddress.email}<br>
+            <strong>Phone:</strong> ${order.shippingAddress.phone}
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Order Items</div>
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${order.items.map(item => `
+                <tr>
+                  <td>${item.name}</td>
+                  <td>$${item.price.toFixed(2)}</td>
+                  <td>${item.quantity}</td>
+                  <td>$${(item.price * item.quantity).toFixed(2)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="section total-section">
+          <div class="section-title">Order Summary</div>
+          <div class="total-row">
+            <span>Subtotal:</span>
+            <span>$${cartTotal.toFixed(2)}</span>
+          </div>
+          <div class="total-row">
+            <span>Shipping:</span>
+            <span>${shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span>
+          </div>
+          <div class="total-row">
+            <span>Tax:</span>
+            <span>$${tax.toFixed(2)}</span>
+          </div>
+          <div class="total-row grand-total">
+            <span>Total Paid:</span>
+            <span>$${order.total.toFixed(2)}</span>
+          </div>
+        </div>
+
+        <div class="footer">
+          <p>Thank you for your business!</p>
+          <p>Questions? Contact us at support@ecommerce-store.com</p>
+          <p>Printed on ${new Date().toLocaleString()}</p>
+        </div>
+
+        <script>
+          window.onload = function() {
+            window.print();
+          }
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+  };
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex items-center justify-between mb-8">
@@ -88,12 +364,23 @@ const OrdersPage = ({ onBackToProducts }) => {
                 Placed on {formatDate(selectedOrder.date)}
               </p>
             </div>
-            <button
-              onClick={() => setSelectedOrder(null)}
-              className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
-            >
-              Back to Orders
-            </button>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => printOrderSummary(selectedOrder)}
+                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                </svg>
+                Print Receipt
+              </button>
+              <button
+                onClick={() => setSelectedOrder(null)}
+                className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
+              >
+                Back to Orders
+              </button>
+            </div>
           </div>
 
           <div className="p-6">
@@ -210,6 +497,18 @@ const OrdersPage = ({ onBackToProducts }) => {
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
                       {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                     </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        printOrderSummary(order);
+                      }}
+                      className="p-2 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-lg transition-colors"
+                      title="Print Receipt"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                      </svg>
+                    </button>
                     <button
                       onClick={() => setSelectedOrder(order)}
                       className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
